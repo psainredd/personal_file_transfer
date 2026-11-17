@@ -1,0 +1,12 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "uri": "https://agents.example.com/my-agent",
+      "method": "post",
+      "headers": {"Authorization": "Bearer $KEY", "Content-Type": "application/json"},
+      "req_template_json_object": {"prompt": "$INPUT"},
+      "response_json": true,
+      "response_json_field": "reply"
+    }
+  }
+}
