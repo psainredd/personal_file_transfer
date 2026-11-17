@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Harness template manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "template_version", "kind", "summary", "upstream", "plug_in", "requires", "run", "normalize", "caveats", "verification"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "name": {"type": "string"},
+    "template_version": {"type": "integer", "minimum": 1},
+    "kind": {"enum": ["benchmark", "security-benchmark", "security-layer", "red-team-tool", "scanner", "eval-framework-bridge"]},
+    "summary": {"type": "string"},
+    "measures": {"type": "array", "items": {"type": "string"}},
+    "upstream": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repo", "license", "license_verified", "pin"],
+      "properties": {
+        "repo": {"type": "string"},
+        "license": {"type": "string"},
+        "license_verified": {"type": "boolean"},
+        "python": {"type": "string"},
+        "pin": {"type": "object", "additionalProperties": false, "required": ["type", "value"],
+                "properties": {"type": {"enum": ["pypi-version", "git-tag", "git-commit"]}, "value": {"type": "string"}}},
+        "renamed_or_drifting": {"type": "string"}
+      }
+    },
+    "plug_in": {
+      "type": "object", "additionalProperties": false,
+      "required": ["contract", "mechanism", "exercises"],
+      "properties": {
+        "contract": {"enum": ["sdk_redirect", "chat_tools", "observation_action", "code_world", "model_text", "text_endpoint", "mcp_config", "inherits_host_benchmark"]},
+        "mechanism": {"type": "string"},
+        "adapter": {"type": "string"},
+        "exercises": {"type": "array", "items": {"enum": ["model", "system_prompt", "scaffold", "agent_tools", "deployment", "mcp_servers"]}},
+        "not_exercised": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "requires": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "environment": {"type": "array", "items": {"type": "string"}},
+        "network_egress": {"type": "array", "items": {"type": "string"}},
+        "secrets": {"type": "array", "items": {"type": "string"}},
+        "extra_models": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "run": {
+      "type": "object", "additionalProperties": false,
+      "required": ["setup", "smoke_test", "command", "outputs"],
+      "properties": {
+        "setup": {"type": "array", "items": {"type": "string"}},
+        "smoke_test": {"type": "string"},
+        "command": {"type": "string"},
+        "outputs": {"type": "string"}
+      }
+    },
+    "normalize": {
+      "type": "object", "additionalProperties": false, "required": ["metrics"],
+      "properties": {"metrics": {"type": "array", "items": {"type": "string"}}, "notes": {"type": "string"}}
+    },
+    "caveats": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "checked_on", "verified", "unverified"],
+      "properties": {
+        "status": {"enum": ["docs-verified", "partially-verified", "paper-only"]},
+        "checked_on": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+        "verified": {"type": "array", "items": {"type": "string"}},
+        "unverified": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}
