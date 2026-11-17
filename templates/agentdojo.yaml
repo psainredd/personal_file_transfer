@@ -1,0 +1,60 @@
+id: agentdojo
+name: AgentDojo (prompt-injection attacks and defenses)
+template_version: 1
+kind: security-benchmark
+summary: Tool-using agents in four suites with injected attacks; reports task utility and attack success.
+measures:
+- utility
+- security (attack success)
+- utility under attack
+upstream:
+  repo: https://github.com/ethz-spylab/agentdojo
+  license: see repo LICENSE
+  license_verified: false
+  pin:
+    type: pypi-version
+    value: '<pin before use: agentdojo==x.y.z>'
+  renamed_or_drifting: The package says its API is still under development and may change.
+plug_in:
+  contract: chat_tools
+  mechanism: Implement a BasePipelineElement that produces assistant messages (with tool calls); compose it in an
+    AgentPipeline with AgentDojo's tool-execution loop; run suites with benchmark_suite_with_injections or the CLI.
+  adapter: adapters/agentdojo_adapter.py
+  exercises:
+  - model
+  - system_prompt
+  - scaffold
+  not_exercised:
+  - your agent's own tools (the suites supply tools)
+requires:
+  environment:
+  - Python
+  network_egress:
+  - LLM provider
+  secrets:
+  - provider key
+  extra_models:
+  - optional prompt-injection detector (transformers extra)
+run:
+  setup:
+  - pip install agentdojo
+  smoke_test: python -m agentdojo.scripts.benchmark -s workspace -ut user_task_0 --model <model> --attack important_instructions
+  command: python -m agentdojo.scripts.benchmark --model <model> --defense <defense> --attack <attack>
+  outputs: benchmark runs directory; see AgentDojo results docs
+normalize:
+  metrics:
+  - utility without attack
+  - utility under attack
+  - targeted attack success rate
+caveats:
+- The CLI selects models by name; a custom agent needs the pipeline-element route, which depends on internal APIs.
+- Attacks are applied to the benchmark's tools, so this measures the model plus scaffold.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - CLI flags, suite names, attack names, pipeline-element architecture, 'API under development' note
+  unverified:
+  - License
+  - BasePipelineElement.query signature, message shape and runtime accessors in the adapter (flagged in the file)
+  - Adapter compiles but was not executed
