@@ -1,0 +1,72 @@
+id: tau2-bench
+name: tau-bench / tau2-bench / tau3-bench (customer-service agents)
+template_version: 1
+kind: benchmark
+summary: Tool-using customer-service agents with domain policies and a simulated user; graded on resulting environment
+  state and policy adherence.
+measures:
+- task success
+- policy adherence
+- reliability across repeated trials
+upstream:
+  repo: https://github.com/sierra-research/tau2-bench
+  license: MIT
+  license_verified: true
+  python: '>=3.12,<3.14'
+  pin:
+    type: git-tag
+    value: '<pin before use: release tag>'
+  renamed_or_drifting: The repo now brands itself tau3-bench; the original tau-bench repo points users to it. Scores
+    from versions before 1.0.1 are not comparable on the banking_knowledge domain.
+plug_in:
+  contract: chat_tools
+  mechanism: Subclass HalfDuplexAgent (get_init_state, generate_next_message), constructor (tools, domain_policy);
+    register a factory with registry.register_agent_factory(factory, 'name'); select with --agent name.
+  adapter: adapters/tau2_adapter.py
+  exercises:
+  - model
+  - system_prompt
+  - scaffold
+  not_exercised:
+  - your agent's own tools (the domain supplies tools and policy)
+  - deployment concerns
+requires:
+  environment:
+  - uv
+  - Python 3.12 or 3.13
+  network_egress:
+  - LLM providers via LiteLLM
+  secrets:
+  - provider API keys in .env
+  extra_models:
+  - user simulator LLM (--user-llm)
+run:
+  setup:
+  - git clone https://github.com/sierra-research/tau2-bench
+  - cd tau2-bench && uv sync
+  - cp .env.example .env
+  smoke_test: tau2 run --domain mock --agent registry_agent --agent-llm <model> --user-llm <model> --num-trials
+    1 --num-tasks 1
+  command: tau2 run --domain <airline|retail|telecom> --agent registry_agent --agent-llm <model> --user-llm <model>
+    --num-trials 4
+  outputs: data/simulations/ (browse with `tau2 view`)
+normalize:
+  metrics:
+  - per-task reward
+  - pass^k over trials
+  - per-domain success rate
+  notes: Use the base task split for comparability with the original structure (the default).
+caveats:
+- 'Costly: every task runs an agent plus an LLM user simulator over many turns.'
+- Non-standard setups must be labelled 'custom' if you submit to the leaderboard.
+- Agent-side tools are the domain's; this does not test your agent's real integrations.
+verification:
+  status: docs-verified
+  checked_on: '2026-11-16'
+  verified:
+  - README quick start, domains, uv install, Python range, 1.0.1 comparability note, MIT license
+  - 'Agent Developer Guide: base classes, constructor contract, factory registration, CLI flags'
+  unverified:
+  - Field names of Message/ToolCall and the Tool schema accessor used in adapters/tau2_adapter.py
+  - Community (non-core) agent registration path
+  - Adapter not executed (needs tau2 installed)

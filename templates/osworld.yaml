@@ -1,0 +1,63 @@
+id: osworld
+name: OSWorld (desktop computer-use agents)
+template_version: 1
+kind: benchmark
+summary: Real desktop apps in a VM; agents act through screenshots/accessibility trees and are checked by task scripts.
+measures:
+- task success across desktop applications
+upstream:
+  repo: https://github.com/xlang-ai/OSWorld
+  license: Apache-2.0
+  license_verified: true
+  python: '>=3.10'
+  pin:
+    type: git-commit
+    value: '<pin before use: commit hash>'
+  renamed_or_drifting: Single-threaded run.py is marked deprecated in the README; use scripts/python/run_multienv.py.
+plug_in:
+  contract: observation_action
+  mechanism: Agent class in mm_agents/ with reset() and predict(instruction, obs) returning (response, actions);
+    import it in run.py or run_multienv.py. lib_run_single.py executes returned actions with env.step.
+  adapter: adapters/osworld_adapter.py
+  exercises:
+  - model
+  - system_prompt
+  - scaffold
+  not_exercised:
+  - your agent's real desktop tooling
+  - deployment
+requires:
+  environment:
+  - VMware/VirtualBox or Docker with KVM
+  - Ubuntu VM image
+  network_egress:
+  - LLM provider
+  - VM image download
+  secrets:
+  - provider key (OPENAI_BASE_URL can point at an OpenAI-compatible endpoint)
+run:
+  setup:
+  - git clone https://github.com/xlang-ai/OSWorld && cd OSWorld
+  - pip install -r requirements.txt
+  - prepare a provider (docker with KVM recommended)
+  smoke_test: python quickstart.py
+  command: python scripts/python/run_multienv.py --provider_name docker --observation_type screenshot --model <name>
+    --max_steps 15 --result_dir ./results
+  outputs: ./results (screenshots, actions, recordings); python show_result.py
+normalize:
+  metrics:
+  - success rate
+  - per-domain success
+  - steps
+caveats:
+- 'Heavy: needs virtualization; macOS hosts generally lack KVM.'
+- Secrets a task needs inside the VM must be injected at startup, not baked into the image.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Agent shape (reset, predict(instruction, obs)) and run loop from lib_run_single.py
+  - Entry points, providers, quickstart, show_result.py, Apache-2.0 listing
+  unverified:
+  - Exact kwargs passed to reset()/predict() on your pin
+  - Adapter tested only for its own shape with a stand-in agent, not inside OSWorld

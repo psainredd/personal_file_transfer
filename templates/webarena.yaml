@@ -1,0 +1,63 @@
+id: webarena
+name: WebArena (web agents)
+template_version: 1
+kind: benchmark
+summary: Self-hosted realistic websites; agents complete web tasks and are checked programmatically.
+measures:
+- task success on 812 examples (full set)
+upstream:
+  repo: https://github.com/web-arena-x/webarena
+  license: see repo LICENSE
+  license_verified: false
+  python: '>=3.10'
+  pin:
+    type: git-tag
+    value: '<pin before use: release tag (v0.2.0 is described as stable)>'
+  renamed_or_drifting: README recommends AgentLab/BrowserGym for parallel runs and unified reporting.
+plug_in:
+  contract: observation_action
+  mechanism: 'Prompt-based: define an instruction JSON plus a prompt constructor (construct, _extract_action). Programmatic:
+    drive the gym-like ScriptBrowserEnv with reset(options={''config_file'': ...}) and step(action).'
+  exercises:
+  - model
+  - system_prompt
+  - scaffold
+  not_exercised:
+  - your agent's real browser tooling unless re-implemented as the env action space
+requires:
+  environment:
+  - self-hosted WebArena sites (Docker or AMI)
+  - playwright browsers
+  network_egress:
+  - LLM provider
+  secrets:
+  - provider key
+run:
+  setup:
+  - pip install -r requirements.txt && playwright install && pip install -e .
+  - follow environment_docker/README.md to host the sites
+  - python scripts/generate_test_data.py
+  - python browser_env/auto_login.py
+  smoke_test: python run.py --instruction_path agent/prompts/jsons/p_cot_id_actree_2s.json --test_start_idx 0 --test_end_idx
+    1 --model <model> --result_dir out/
+  command: python run.py --instruction_path <prompt.json> --test_start_idx 0 --test_end_idx 812 --model <model>
+    --result_dir out/
+  outputs: <result_dir>/ (HTML trajectories, per-task results)
+normalize:
+  metrics:
+  - success rate
+  - per-site success rate
+  - steps per task
+caveats:
+- Reset the websites to their initial state after a full 812-task evaluation.
+- The environment is stateful; parallel runs need isolated site copies.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Install, run.py flags, prompt-based agent steps, gym-like env usage, reset note, AgentLab recommendation (README
+    snippets)
+  unverified:
+  - License
+  - A code-level adapter for the observation_action contract (none provided)
+  - Current action-space details on the pinned version

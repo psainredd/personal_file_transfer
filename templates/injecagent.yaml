@@ -1,0 +1,60 @@
+id: injecagent
+name: InjecAgent (indirect prompt injection in tool-integrated agents)
+template_version: 1
+kind: security-benchmark
+summary: 1,054 test cases (17 user tools, 62 attacker tools) measuring how often injected tool output hijacks an
+  agent.
+measures:
+- attack success rate (base and enhanced settings)
+- valid-output rate
+upstream:
+  repo: https://github.com/uiuc-kang-lab/InjecAgent
+  license: see repo LICENSE
+  license_verified: false
+  pin:
+    type: git-commit
+    value: '<pin before use: commit hash>'
+plug_in:
+  contract: model_text
+  mechanism: Subclass BaseModel in src/models.py with prepare_input() and call_model(), register it in MODELS, and
+    run evaluate_prompted_agent.py with --model_type <name>.
+  adapter: adapters/injecagent_model.py
+  exercises:
+  - model
+  - system_prompt
+  not_exercised:
+  - 'agent scaffold and tools: the harness sends a ReAct prompt and scores the text reply'
+  - any real tool execution (tool outputs are pre-written test cases)
+requires:
+  environment:
+  - Python
+  network_egress:
+  - your agent endpoint or LLM provider
+  secrets:
+  - agent/provider credentials
+run:
+  setup:
+  - git clone https://github.com/uiuc-kang-lab/InjecAgent && cd InjecAgent
+  - export PYTHONPATH=. && pip install -r requirements.txt
+  smoke_test: python3 src/evaluate_prompted_agent.py --model_type Registry --model_name registry --setting base
+    --prompt_type InjecAgent --use_cache
+  command: python3 src/evaluate_prompted_agent.py --model_type Registry --model_name registry --setting <base|enhanced>
+    --prompt_type InjecAgent --use_cache
+  outputs: JSON summary printed with attack success rates
+normalize:
+  metrics:
+  - '#Test Case'
+  - Valid Rate
+  - ASR
+  notes: Output key names come from the README example; confirm on your pin.
+caveats:
+- Tests the model plus prompt behind your agent, not your agent's harness.
+- Fine-tuned (function-calling) mode targets OpenAI function-calling models.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Dataset size, setup, evaluate_prompted_agent.py flags, BaseModel extension pattern, output fields (README)
+  unverified:
+  - License
+  - Adapter was not executed inside InjecAgent

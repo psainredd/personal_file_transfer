@@ -1,0 +1,66 @@
+id: promptfoo
+name: promptfoo (eval and red-team framework)
+template_version: 1
+kind: red-team-tool
+summary: YAML-driven evals and red teaming against HTTP endpoints, custom scripts or models; plugins and strategies
+  generate attacks.
+measures:
+- assertion pass rates
+- red-team plugin failures by category
+upstream:
+  repo: https://github.com/promptfoo/promptfoo
+  license: see repo LICENSE
+  license_verified: false
+  pin:
+    type: pypi-version
+    value: '<pin before use: promptfoo version via npx promptfoo@x.y.z>'
+  renamed_or_drifting: One secondary source says the company was acquired; check current ownership and license terms
+    before depending on it.
+plug_in:
+  contract: text_endpoint
+  mechanism: 'targets/providers in promptfooconfig.yaml: ''id: https'' for JSON HTTP APIs, or file://provider.py
+    with call_api(prompt, options, context) for custom auth, retries or multi-step calls.'
+  adapter: adapters/promptfoo_provider.py
+  exercises:
+  - model
+  - system_prompt
+  - deployment
+  not_exercised:
+  - internal tool execution unless the endpoint reports it
+requires:
+  environment:
+  - Node.js (npx) or pip install
+  network_egress:
+  - agent endpoint
+  - LLM provider for generation and grading
+  secrets:
+  - agent credentials
+  - grader model key
+  extra_models:
+  - red-team generator
+  - LLM judge
+run:
+  setup:
+  - npx promptfoo@latest --version
+  smoke_test: npx promptfoo@latest validate target -c promptfooconfig.yaml
+  command: npx promptfoo@latest redteam run -c promptfooconfig.yaml
+  outputs: promptfoo results store; export JSON for the registry
+normalize:
+  metrics:
+  - pass rate per assertion
+  - failure rate per red-team plugin
+  - probe count
+caveats:
+- Generated red-team cases vary between runs; pin version and keep generated test files.
+- Validate the target and generated cases before spending probe budget.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Config structure, https provider, Python provider signature, validate commands, red-team architecture (docs
+    and skill-text snippets)
+  - adapters/promptfoo_provider.py call_api tested against a local stub endpoint (success and error paths)
+  unverified:
+  - License and current ownership
+  - Provider return shape on your version
+  - promptfoo itself was not run here

@@ -1,0 +1,59 @@
+id: mcp-scan
+name: MCP-Scan / Snyk Agent Scan (MCP supply-chain scanner)
+template_version: 1
+kind: scanner
+summary: Scans an agent's MCP server configurations and tool descriptions for prompt injection, tool poisoning and
+  toxic flows. Does not test agent behavior.
+measures:
+- findings in MCP tool descriptions
+- tool-change detection (pinning)
+upstream:
+  repo: https://github.com/snyk/agent-scan (formerly invariantlabs-ai/mcp-scan)
+  license: Snyk terms of use apply to the hosted analysis; repo license not verified
+  license_verified: false
+  pin:
+    type: pypi-version
+    value: '<pin before use: snyk-agent-scan==x.y.z>'
+  renamed_or_drifting: mcp-scan became snyk-agent-scan; the old uvx mcp-scan command is still shown in older guides.
+plug_in:
+  contract: mcp_config
+  mechanism: Give it the agent's MCP configuration file(s) (and optionally skills). It starts stdio servers, lists
+    tools, and analyses descriptions.
+  exercises:
+  - mcp_servers
+  not_exercised:
+  - model
+  - system prompt
+  - scaffold
+  - runtime behavior
+requires:
+  environment:
+  - sandbox/VM for untrusted configs
+  network_egress:
+  - Snyk Agent Scan API
+  secrets:
+  - none required for a basic scan
+run:
+  setup:
+  - uvx snyk-agent-scan@latest --help
+  smoke_test: uvx snyk-agent-scan@latest inspect path/to/mcp.json
+  command: uvx snyk-agent-scan@latest scan path/to/mcp.json
+  outputs: console report (check CLI options for machine-readable output)
+normalize:
+  metrics:
+  - finding count by severity
+  - findings per server
+caveats:
+- It executes the commands in the MCP config to retrieve tool descriptions, so a malicious config runs code. Use
+  a disposable sandbox for third-party configs.
+- Tool names and descriptions are sent to Snyk for analysis; check this against your data-handling rules.
+- --dangerously-run-mcp-servers skips the consent prompt; use it only in CI sandboxes.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Commands (scan, inspect), consent behavior, data sharing, rename to snyk-agent-scan (PyPI and README snippets)
+  unverified:
+  - Repo license
+  - Machine-readable output options
+  - Not installed or run here

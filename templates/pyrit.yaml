@@ -1,0 +1,66 @@
+id: pyrit
+name: PyRIT (red-teaming automation)
+template_version: 1
+kind: red-team-tool
+summary: 'Microsoft''s framework: prompt targets, converters, scorers and attack strategies for multi-turn red teaming
+  of AI systems.'
+measures:
+- objective achieved per attack (scorer-defined)
+- attack success rate by strategy
+upstream:
+  repo: https://github.com/microsoft/PyRIT (docs at azure.github.io/PyRIT; earlier Azure/PyRIT)
+  license: see repo LICENSE
+  license_verified: false
+  python: '>=3.11'
+  pin:
+    type: pypi-version
+    value: '<pin before use: pyrit==x.y.z>'
+  renamed_or_drifting: Docs and releases show the attack API moving from 'orchestrators' to 'attacks' and a pyrit_scan
+    CLI; arguments change between releases (e.g. OpenAI target endpoint/model_name).
+plug_in:
+  contract: text_endpoint
+  mechanism: 'Point a prompt target at the agent: OpenAIChatTarget(endpoint=..., model_name=...) for OpenAI-compatible
+    agents, HTTPTarget for other REST agents, or a custom PromptTarget. HTTPTarget does not manage conversation
+    history.'
+  exercises:
+  - model
+  - system_prompt
+  - deployment
+  not_exercised:
+  - internal tool execution is visible only through the agent's replies
+requires:
+  environment:
+  - Python 3.11+
+  network_egress:
+  - agent endpoint
+  - adversarial and scoring LLMs
+  secrets:
+  - agent credentials
+  - attacker/scorer model keys
+  extra_models:
+  - adversarial chat model
+  - scoring model
+run:
+  setup:
+  - python -m pip install pyrit
+  smoke_test: '<fill in from the docs for your pinned version: one PromptSending attack with one prompt>'
+  command: <attack script against the configured target>
+  outputs: PyRIT memory database and scorer results
+normalize:
+  metrics:
+  - attack success rate
+  - turns to success
+  - scorer verdicts
+caveats:
+- Attacks are generated at run time and vary between runs; pin versions and record seeds where available.
+- Get written authorization before attacking any system you do not own.
+- Needs separate attacker and scoring models, which adds cost.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Targets, converters, scorers and attack roles; OpenAIChatTarget and HTTPTarget usage; Python 3.11+; API drift
+    signals (docs and release notes snippets)
+  unverified:
+  - License
+  - A runnable script for your pinned version (none provided because the API drifts)

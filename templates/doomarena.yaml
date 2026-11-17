@@ -1,0 +1,52 @@
+id: doomarena
+name: DoomArena (security layer over existing benchmarks)
+template_version: 1
+kind: security-layer
+summary: Plug-in layer that adds configurable threat models and attacks to agent benchmarks such as BrowserGym,
+  tau-bench and OSWorld.
+measures:
+- attack success under chosen threat models
+- task performance under attack
+upstream:
+  repo: https://github.com/ServiceNow/DoomArena
+  license: see repo LICENSE
+  license_verified: false
+  pin:
+    type: git-commit
+    value: '<pin before use: commit hash>'
+plug_in:
+  contract: inherits_host_benchmark
+  mechanism: Not read at code level. The paper describes it as a plug-in that wraps a host benchmark environment;
+    your agent plugs into the host benchmark's contract (tau-bench, BrowserGym, OSWorld).
+  exercises:
+  - model
+  - system_prompt
+  - scaffold
+  not_exercised:
+  - anything the host benchmark does not exercise
+requires:
+  environment:
+  - the host benchmark's environment
+  network_egress:
+  - LLM provider
+  secrets:
+  - provider key
+run:
+  setup:
+  - clone the repo and follow the integration README for your host benchmark
+  smoke_test: <fill in from the repo README after pinning>
+  command: <fill in from the repo README>
+  outputs: <fill in>
+normalize:
+  metrics:
+  - attack success rate
+  - task success under attack
+caveats:
+- Do not publish this template to users until the smoke test is filled in and run.
+verification:
+  status: paper-only
+  checked_on: '2026-11-16'
+  verified:
+  - Design and supported hosts (BrowserGym, tau-bench, OSWorld) from the COLM 2025 paper
+  unverified:
+  - Installation, commands, configuration schema and adapter points (repo README not read)

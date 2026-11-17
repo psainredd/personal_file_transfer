@@ -1,0 +1,64 @@
+id: appworld
+name: AppWorld (interactive coding agents over app APIs)
+template_version: 1
+kind: benchmark
+summary: Simulated day-to-day apps and users; agents write code against app APIs and are graded by state-based unit
+  tests.
+measures:
+- task goal completion
+- collateral-damage checks via state-based tests
+upstream:
+  repo: https://github.com/StonyBrookNLP/appworld
+  license: see repo LICENSE
+  license_verified: false
+  python: '>=3.11'
+  pin:
+    type: pypi-version
+    value: '<pin before use: appworld==x.y.z>'
+plug_in:
+  contract: code_world
+  mechanism: 'Your loop: with AppWorld(task_id, experiment_name) as world: read world.task.instruction, call world.execute(code),
+    finish with apis.supervisor.complete_task(...). Evaluate with `appworld evaluate <experiment> <dataset>`.'
+  adapter: adapters/appworld_runner.py
+  exercises:
+  - model
+  - system_prompt
+  - scaffold
+  not_exercised:
+  - your agent's real tools (AppWorld's apps are the tools)
+requires:
+  environment:
+  - Python 3.11+
+  network_egress:
+  - LLM provider
+  secrets:
+  - provider key
+run:
+  setup:
+  - pip install appworld
+  - appworld install
+  - appworld download data
+  smoke_test: REGISTRY_AGENT_ENTRYPOINT=pkg.mod:make python adapters/appworld_runner.py --experiment smoke --dataset
+    dev --limit 1
+  command: REGISTRY_AGENT_ENTRYPOINT=pkg.mod:make python adapters/appworld_runner.py --experiment <name> --dataset
+    test_normal && appworld evaluate <name> test_normal
+  outputs: experiment outputs under APPWORLD_ROOT; evaluate prints the report
+normalize:
+  metrics:
+  - task goal completion
+  - scenario goal completion
+  notes: Metric names should be confirmed against the evaluate report on your pin.
+caveats:
+- The README has an 'Agent Development Restrictions' section; read it before building on the dev/train data.
+- Agent-written code runs in the environment; AppWorld has execution-safety features but run it isolated.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - API for AppWorld, execute, task.instruction, load_task_ids, CLI commands, install steps, dataset names (README
+    snippets)
+  - Runner loop executed against a fake AppWorld to test our own logic
+  unverified:
+  - License
+  - Exact metric names in the evaluate report
+  - Runner not executed against the real package

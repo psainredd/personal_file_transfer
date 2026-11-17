@@ -1,0 +1,54 @@
+id: wasp
+name: WASP (web agent prompt-injection security)
+template_version: 1
+kind: security-benchmark
+summary: Prompt-injection attacks against web agents in a sandbox built on VisualWebArena (self-hosted GitLab and
+  Reddit).
+measures:
+- ASR-intermediate (agent hijacked)
+- ASR-end-to-end (attacker goal achieved)
+upstream:
+  repo: https://github.com/facebookresearch/wasp
+  license: see repo LICENSE
+  license_verified: false
+  pin:
+    type: git-commit
+    value: '<pin before use: commit hash>'
+plug_in:
+  contract: observation_action
+  mechanism: Not read at code level. The paper says the benchmark is compatible with any generalist web or computer
+    agent and evaluates VisualWebArena scaffolding, Claude Computer Use and Operator.
+  exercises:
+  - model
+  - system_prompt
+  - scaffold
+  not_exercised:
+  - anything outside the two sandboxed apps
+requires:
+  environment:
+  - VisualWebArena-style Docker environment
+  network_egress:
+  - LLM provider
+  secrets:
+  - provider key
+run:
+  setup:
+  - follow the repo README
+  smoke_test: <fill in from the repo README after pinning>
+  command: <fill in from the repo README>
+  outputs: <fill in>
+normalize:
+  metrics:
+  - ASR-intermediate
+  - ASR-end-to-end
+  - benign task success
+caveats:
+- Setup is heavy and covers a narrow set of apps.
+- Do not publish this template until the smoke test is filled in and run.
+verification:
+  status: paper-only
+  checked_on: '2026-11-16'
+  verified:
+  - Benchmark design, metrics and environment basis (NeurIPS 2025 paper and arXiv)
+  unverified:
+  - Installation, commands and adapter point (repo README not read)

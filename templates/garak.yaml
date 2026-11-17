@@ -1,0 +1,59 @@
+id: garak
+name: garak (LLM vulnerability scanner)
+template_version: 1
+kind: red-team-tool
+summary: 'NVIDIA''s scanner: probes send attack prompts, detectors grade replies, reports list failures by probe.'
+measures:
+- failure rate per probe/detector
+- coverage across vulnerability classes
+upstream:
+  repo: https://github.com/NVIDIA/garak
+  license: see repo LICENSE
+  license_verified: false
+  pin:
+    type: pypi-version
+    value: '<pin before use: garak==x.y.z>'
+  renamed_or_drifting: 'Recent releases use --target_type/--generator_option_file/--spec; older guides use --model_type/-G/--probes.
+    Option names inside RestGenerator also differ by version (run: python -m garak --plugin_info generators.rest.RestGenerator).'
+plug_in:
+  contract: text_endpoint
+  mechanism: 'Use the REST generator: a JSON options file gives the URL, request template with $INPUT and the response
+    field. Registry text contract: POST {''prompt''} -> {''reply''}.'
+  adapter: adapters/garak_rest.json
+  exercises:
+  - model
+  - system_prompt
+  - deployment
+  not_exercised:
+  - multi-step tool use (garak is single-turn probing by default)
+requires:
+  environment:
+  - Python (Linux/macOS developed)
+  network_egress:
+  - agent endpoint
+  secrets:
+  - agent credentials ($KEY)
+run:
+  setup:
+  - python -m pip install garak
+  smoke_test: python -m garak --target_type test.Blank --probes test.Test
+  command: python -m garak --target_type rest --generator_option_file adapters/garak_rest.json --probes promptinject,encoding
+    --parallel_attempts 10
+  outputs: ~/.local/share/garak/garak_runs/ (JSONL report + HTML hit log)
+normalize:
+  metrics:
+  - pass/fail per probe+detector
+  - attack success percentage
+caveats:
+- Tests the application endpoint, so it mostly measures model plus prompt behavior on text probes.
+- Throttle parallelism to avoid hammering production endpoints.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Install, REST generator config keys (req_template_json_object, response_json, response_json_field), probe names,
+    report location, flag drift between versions (README and tutorials)
+  unverified:
+  - License
+  - garak was not installed or run here; config JSON checked for syntax only
+  - uri/method/headers key names on your pin

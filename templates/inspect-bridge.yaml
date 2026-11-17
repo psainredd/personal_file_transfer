@@ -1,0 +1,67 @@
+id: inspect-bridge
+name: Inspect AI + Agent Bridge
+template_version: 1
+kind: eval-framework-bridge
+summary: Run your own Inspect task (dataset + scorer) against an agent built on an external framework or SDK by
+  routing its model calls through Inspect.
+measures:
+- whatever your scorer checks
+- state-based checks via sandbox or bridged tools
+upstream:
+  repo: https://github.com/UKGovernmentBEIS/inspect_ai
+  license: see repo LICENSE
+  license_verified: false
+  pin:
+    type: pypi-version
+    value: '<pin before use: inspect-ai==x.y.z>'
+plug_in:
+  contract: sdk_redirect
+  mechanism: 'In-process: the agent uses the OpenAI, Anthropic or Google SDK with model=''inspect'' inside agent_bridge(state).
+    Sandbox: the agent runs in the sandbox (any language) and its base URL points at the bridge proxy (localhost:13131).
+    Optional bridged_tools expose host-side Inspect tools to sandboxed agents as MCP.'
+  adapter: adapters/inspect_bridge.py
+  exercises:
+  - scaffold
+  - system_prompt
+  not_exercised:
+  - model (the eval picks it; the agent's own model name is overridden)
+  - agent generation settings (dropped unless forward_generation_config=True)
+  - agent-local tool execution (visible only inside model calls; bridged tools are logged as tool events)
+requires:
+  environment:
+  - docker (sandbox mode only)
+  network_egress:
+  - model provider API
+  secrets:
+  - model provider key
+run:
+  setup:
+  - pip install inspect-ai openai
+  smoke_test: inspect eval adapters/inspect_bridge.py -T dataset_path=samples.jsonl -T entrypoint=pkg.mod:run --model
+    mockllm/model
+  command: inspect eval adapters/inspect_bridge.py -T dataset_path=samples.jsonl -T entrypoint=pkg.mod:run --model
+    <provider/model>
+  outputs: Inspect .eval logs in --log-dir
+normalize:
+  metrics:
+  - scorer accuracy
+  - per-sample score + explanation
+  - token usage
+  - model-call transcript
+caveats:
+- Results describe your scaffold on the model chosen for the run, not the model your agent uses in production, so
+  set the run's model from the agent manifest.
+- Remote agent services you cannot redirect cannot be bridged; wrap them in a thin solver and accept that model
+  calls are invisible.
+- Sub-agent attribution (root vs sub-agent) depends on whoever runs the bridge setting context.
+verification:
+  status: docs-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Bridge semantics, model name 'inspect', port 13131, generation-config and header handling, bridged tools, transcript
+    contents (official Agent Bridge docs page fetched)
+  - adapters/inspect_bridge.py ran end to end in process mode with a stand-in OpenAI-SDK agent on mockllm; the model
+    call was captured and scored
+  unverified:
+  - Sandbox mode not executed (needs Docker)
+  - Tokenizer download was stubbed in the test because this environment has no network access

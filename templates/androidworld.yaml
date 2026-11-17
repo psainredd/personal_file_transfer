@@ -1,0 +1,59 @@
+id: androidworld
+name: AndroidWorld (mobile agents)
+template_version: 1
+kind: benchmark
+summary: Live Android emulator with parameterized tasks across real apps; rewards come from system state.
+measures:
+- task success on emulated Android apps
+upstream:
+  repo: https://github.com/google-research/android_world
+  license: Apache-2.0
+  license_verified: true
+  python: '>=3.11'
+  pin:
+    type: git-commit
+    value: '<pin before use: commit hash>'
+plug_in:
+  contract: observation_action
+  mechanism: Subclass EnvironmentInteractingAgent and implement step(goal); import in run.py and add a name to _get_agent;
+    run with --agent_name.
+  adapter: adapters/androidworld_adapter.py
+  exercises:
+  - model
+  - system_prompt
+  - scaffold
+  not_exercised:
+  - your agent's real mobile tooling
+requires:
+  environment:
+  - Android emulator (Pixel 6, API 33, AVD 'AndroidWorldAvd') or the Docker image (privileged)
+  - ffmpeg
+  network_egress:
+  - LLM provider
+  secrets:
+  - provider key
+run:
+  setup:
+  - create conda env with Python 3.11
+  - git clone https://github.com/google-research/android_world && pip install -r requirements.txt && python setup.py
+    install
+  - launch the emulator with -grpc 8554
+  smoke_test: python minimal_task_runner.py --task=ContactsAddContact
+  command: python run.py --suite_family=android_world --agent_name=registry_agent --perform_emulator_setup --tasks=<comma
+    list>
+  outputs: run.py output directory
+normalize:
+  metrics:
+  - task success rate
+  - per-task results
+caveats:
+- First run needs --perform_emulator_setup to install apps and permissions.
+- Described by its authors as not an officially supported Google product.
+verification:
+  status: partially-verified
+  checked_on: '2026-11-16'
+  verified:
+  - Agent subclass, step(goal), _get_agent registration, run.py flags, emulator setup, Docker option, Apache-2.0
+  unverified:
+  - UI-state helper name, AgentInteractionResult constructor and JSONAction fields used in the adapter
+  - Adapter compiles but was not executed (needs android_world and an emulator)
